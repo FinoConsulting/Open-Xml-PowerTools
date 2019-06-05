@@ -26,6 +26,14 @@ namespace OpenXmlPowerTools
             }
             return x;
         }
+        static string EmptyText(Match m)
+        {
+            return String.Empty;
+        }
+        static string NullText(Match m)
+        {
+            return null;
+        }
 
         static void Main(string[] args)
         {
@@ -38,33 +46,32 @@ namespace OpenXmlPowerTools
                 file.CopyTo(Path.Combine(tempDi.FullName, file.Name));
 
             using (WordprocessingDocument doc = WordprocessingDocument.Open(Path.Combine(tempDi.FullName, "Test01.docx"), true))
-                TextReplacer.SearchAndReplace(doc, "t.{1}e", Program.CapText);
-            return;
+                TextReplacer.SearchAndReplace(doc, "t.{1}e", Program.EmptyText);
 
-            try
-            {
-                using (WordprocessingDocument doc = WordprocessingDocument.Open(Path.Combine(tempDi.FullName, "Test02.docx"), true))
-                    TextReplacer.SearchAndReplace(doc, "the", "this", false);
-            }
-            catch (Exception) { }
-            try
-            {
-                using (WordprocessingDocument doc = WordprocessingDocument.Open(Path.Combine(tempDi.FullName, "Test03.docx"), true))
-                    TextReplacer.SearchAndReplace(doc, "the", "this", false);
-            }
-            catch (Exception) { }
-            using (WordprocessingDocument doc = WordprocessingDocument.Open(Path.Combine(tempDi.FullName, "Test04.docx"), true))
-                TextReplacer.SearchAndReplace(doc, "the", "this", true);
-            using (WordprocessingDocument doc = WordprocessingDocument.Open(Path.Combine(tempDi.FullName, "Test05.docx"), true))
-                TextReplacer.SearchAndReplace(doc, "is on", "is above", true);
-            using (WordprocessingDocument doc = WordprocessingDocument.Open(Path.Combine(tempDi.FullName, "Test06.docx"), true))
-                TextReplacer.SearchAndReplace(doc, "the", "this", false);
-            using (WordprocessingDocument doc = WordprocessingDocument.Open(Path.Combine(tempDi.FullName, "Test07.docx"), true))
-                TextReplacer.SearchAndReplace(doc, "the", "this", true);
-            using (WordprocessingDocument doc = WordprocessingDocument.Open(Path.Combine(tempDi.FullName, "Test08.docx"), true))
-                TextReplacer.SearchAndReplace(doc, "the", "this", true);
-            using (WordprocessingDocument doc = WordprocessingDocument.Open(Path.Combine(tempDi.FullName, "Test09.docx"), true))
-                TextReplacer.SearchAndReplace(doc, "===== Replace this text =====", "***zzz***", true);
+            //try
+            //{
+            //    using (WordprocessingDocument doc = WordprocessingDocument.Open(Path.Combine(tempDi.FullName, "Test02.docx"), true))
+            //        TextReplacer.SearchAndReplace(doc, "the", "this", false);
+            //}
+            //catch (Exception) { }
+            //try
+            //{
+            //    using (WordprocessingDocument doc = WordprocessingDocument.Open(Path.Combine(tempDi.FullName, "Test03.docx"), true))
+            //        TextReplacer.SearchAndReplace(doc, "the", "this", false);
+            //}
+            //catch (Exception) { }
+            //using (WordprocessingDocument doc = WordprocessingDocument.Open(Path.Combine(tempDi.FullName, "Test04.docx"), true))
+            //    TextReplacer.SearchAndReplace(doc, "the", "this", true);
+            //using (WordprocessingDocument doc = WordprocessingDocument.Open(Path.Combine(tempDi.FullName, "Test05.docx"), true))
+            //    TextReplacer.SearchAndReplace(doc, "is on", "is above", true);
+            //using (WordprocessingDocument doc = WordprocessingDocument.Open(Path.Combine(tempDi.FullName, "Test06.docx"), true))
+            //    TextReplacer.SearchAndReplace(doc, "the", "this", false);
+            //using (WordprocessingDocument doc = WordprocessingDocument.Open(Path.Combine(tempDi.FullName, "Test07.docx"), true))
+            //    TextReplacer.SearchAndReplace(doc, "the", "this", true);
+            //using (WordprocessingDocument doc = WordprocessingDocument.Open(Path.Combine(tempDi.FullName, "Test08.docx"), true))
+            //    TextReplacer.SearchAndReplace(doc, "the", "this", true);
+            //using (WordprocessingDocument doc = WordprocessingDocument.Open(Path.Combine(tempDi.FullName, "Test09.docx"), true))
+            //    TextReplacer.SearchAndReplace(doc, "===== Replace this text =====", "***zzz***", true);
         }
     }
 }

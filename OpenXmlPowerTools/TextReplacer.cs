@@ -64,15 +64,17 @@ namespace OpenXmlPowerTools
                 if (element.Name == W.p)
                 {
                     string contents = element.Descendants(W.t).Select(t => (string)t).StringConcatenate();
-                    if (regex)
+                    var searchResult = search;
+
+                    var regexMatch = regex ? !options.HasValue ? Regex.Match(contents, search) : Regex.Match(contents, search, options.Value) : null;
+                    if (regex && regexMatch.Success)
                     {
-                        var regexMatch = !options.HasValue ? Regex.Match(contents, search) : Regex.Match(contents, search, options.Value);
-                        search  = regexMatch.Success ? regexMatch.Value             : String.Empty;
-                        replace = regexMatch.Success ? evaluator.Invoke(regexMatch) : String.Empty;
+                        searchResult = regexMatch.Value     ;
+                        replace      = evaluator(regexMatch);
                     }
 
-                    if (regex ? search != "" : contents.Contains(search) ||
-                        (!matchCase && contents.ToUpper().Contains(search.ToUpper())))
+                    if ((regex && regexMatch.Success) || (!regex && (contents.Contains(searchResult) ||
+                        (!matchCase && contents.ToUpper().Contains(searchResult.ToUpper())))))
                     {
                         XElement paragraphWithSplitRuns = new XElement(W.p,
                             element.Attributes(),
@@ -90,11 +92,11 @@ namespace OpenXmlPowerTools
                         int paragraphChildrenCount = subRunArray.Length;
                         int matchId = 1;
                         foreach (var pc in subRunArray
-                            .Take(paragraphChildrenCount - (search.Length - 1))
+                            .Take(paragraphChildrenCount - (searchResult.Length - 1))
                             .Select((c, i) => new { Child = c, Index = i, }))
                         {
-                            var subSequence = subRunArray.SequenceAt(pc.Index).Take(search.Length);
-                            var zipped = subSequence.PtZip(search, (pcp, c) => new
+                            var subSequence = subRunArray.SequenceAt(pc.Index).Take(searchResult.Length);
+                            var zipped = subSequence.PtZip(searchResult, (pcp, c) => new
                             {
                                 ParagraphChildProjection = pcp,
                                 CharacterToCompare = c,
@@ -158,7 +160,7 @@ namespace OpenXmlPowerTools
                                         return (object)g;
                                     string textValue = g.Select(r => r.Element(W.t).Value).StringConcatenate();
                                     XAttribute xs = null;
-                                    if (textValue[0] == ' ' || textValue[textValue.Length - 1] == ' ')
+                                    if (textValue.Length > 0 && (textValue[0] == ' ' || textValue[textValue.Length - 1] == ' '))
                                         xs = new XAttribute(XNamespace.Xml + "space", "preserve");
                                     return new XElement(W.r,
                                         g.First().Elements(W.rPr),

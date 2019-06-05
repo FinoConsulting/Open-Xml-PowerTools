@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using DocumentFormat.OpenXml.Packaging;
 using OpenXmlPowerTools;
@@ -14,18 +15,32 @@ namespace OpenXmlPowerTools
 {
     class Program
     {
+        static string CapText(Match m) {
+            // Get the matched string.
+            string x = m.ToString();
+            // If the first char is lower case...
+            if (char.IsLower(x[0]))
+            {
+                // Capitalize it.
+                return char.ToUpper(x[0]) + x.Substring(1, x.Length - 1);
+            }
+            return x;
+        }
+
         static void Main(string[] args)
         {
             var n = DateTime.Now;
             var tempDi = new DirectoryInfo(string.Format("ExampleOutput-{0:00}-{1:00}-{2:00}-{3:00}{4:00}{5:00}", n.Year - 2000, n.Month, n.Day, n.Hour, n.Minute, n.Second));
             tempDi.Create();
 
-            DirectoryInfo di2 = new DirectoryInfo("../../");
+            DirectoryInfo di2 = new DirectoryInfo("../../../");
             foreach (var file in di2.GetFiles("*.docx"))
                 file.CopyTo(Path.Combine(tempDi.FullName, file.Name));
 
             using (WordprocessingDocument doc = WordprocessingDocument.Open(Path.Combine(tempDi.FullName, "Test01.docx"), true))
-                TextReplacer.SearchAndReplace(doc, "the", "this", false);
+                TextReplacer.SearchAndReplace(doc, "t.{1}e", Program.CapText);
+            return;
+
             try
             {
                 using (WordprocessingDocument doc = WordprocessingDocument.Open(Path.Combine(tempDi.FullName, "Test02.docx"), true))

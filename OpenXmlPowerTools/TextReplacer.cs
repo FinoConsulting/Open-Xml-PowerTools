@@ -55,7 +55,7 @@ namespace OpenXmlPowerTools
         }
 
         private static object WmlSearchAndReplaceTransform(XNode node,
-            string search, string replace, bool matchCase, bool regex = false, RegexOptions? options = null, MatchEvaluator evaluator = null)
+            string search, string replace, bool matchCase, bool regex = false, Regex regexProvided = null, RegexOptions? options = null, MatchEvaluator evaluator = null)
         {
             if( regex && evaluator == null) {  throw new ArgumentException($"When specifying the search string as a regular expression, an evaluator must be provided"); }
             XElement element = node as XElement;
@@ -66,7 +66,7 @@ namespace OpenXmlPowerTools
                     string contents = element.Descendants(W.t).Select(t => (string)t).StringConcatenate();
                     var searchResult = search;
 
-                    var regexMatch = regex ? !options.HasValue ? Regex.Match(contents, search) : Regex.Match(contents, search, options.Value) : null;
+                    var regexMatch = regex ? regexProvided != null ? regexProvided.Match(contents) : !options.HasValue ? Regex.Match(contents, search) : Regex.Match(contents, search, options.Value) : null;
                     if (regex && regexMatch.Success)
                     {
                         searchResult = regexMatch.Value     ;
@@ -79,7 +79,7 @@ namespace OpenXmlPowerTools
                         XElement paragraphWithSplitRuns = new XElement(W.p,
                             element.Attributes(),
                             element.Nodes().Select(n => WmlSearchAndReplaceTransform(n, search,
-                                replace, matchCase, regex, options, evaluator)));
+                                replace, matchCase, regex, regexProvided, options, evaluator)));
                         XElement[] subRunArray = paragraphWithSplitRuns
                             .Elements(W.r)
                             .Where(e => {
@@ -204,16 +204,16 @@ namespace OpenXmlPowerTools
                 return new XElement(element.Name,
                     element.Attributes(),
                     element.Nodes().Select(n => WmlSearchAndReplaceTransform(n,
-                        search, replace, matchCase, regex, options, evaluator)));
+                        search, replace, matchCase, regex, regexProvided, options, evaluator)));
             }
             return node;
         }
 
         private static void WmlSearchAndReplaceInXDocument(XDocument xDocument, string search,
-            string replace, bool matchCase, bool regex = false, RegexOptions? options = null, MatchEvaluator evaluator = null)
+            string replace, bool matchCase, bool regex = false, Regex regexProvided = null, RegexOptions? options = null, MatchEvaluator evaluator = null)
         {
             XElement newRoot = (XElement)WmlSearchAndReplaceTransform(xDocument.Root,
-                search, replace, matchCase, regex, options, evaluator);
+                search, replace, matchCase, regex, regexProvided, options, evaluator);
             xDocument.Elements().First().ReplaceWith(newRoot);
         }
 
@@ -235,14 +235,21 @@ namespace OpenXmlPowerTools
             string replace,
             bool matchCase)
         {
-            TextReplacer.SearchAndReplace(wordDoc, search, replace, matchCase, false, null, null);
+            TextReplacer.SearchAndReplace(wordDoc, search, replace, matchCase, false, null, null, null);
         }
         public static void SearchAndReplace(
             WordprocessingDocument wordDoc,
             string search,
             MatchEvaluator evaluator)
         {
-            TextReplacer.SearchAndReplace(wordDoc, search, "", false, true, null, evaluator);
+            TextReplacer.SearchAndReplace(wordDoc, "", "", false, true, new Regex(search), null, evaluator);
+        }
+        public static void SearchAndReplace(
+            WordprocessingDocument wordDoc,
+            Regex match,
+            MatchEvaluator evaluator)
+        {
+            TextReplacer.SearchAndReplace(wordDoc, "", "", false, true, match, null, evaluator);
         }
         public static void SearchAndReplace(
             WordprocessingDocument wordDoc,
@@ -250,11 +257,11 @@ namespace OpenXmlPowerTools
             MatchEvaluator evaluator,
             RegexOptions options)
         {
-            TextReplacer.SearchAndReplace(wordDoc, search, "", false, true, options, evaluator);
+            TextReplacer.SearchAndReplace(wordDoc, "", "", false, true, new Regex(search, options), options, evaluator);
         }
 
         private static void SearchAndReplace(WordprocessingDocument wordDoc, string search,
-            string replace, bool matchCase, bool regex, RegexOptions? options, MatchEvaluator evaluator)
+            string replace, bool matchCase, bool regex, Regex regexProvided, RegexOptions? options, MatchEvaluator evaluator)
         {
             if (RevisionAccepter.HasTrackedRevisions(wordDoc))
                 throw new InvalidDataException(
@@ -266,30 +273,30 @@ namespace OpenXmlPowerTools
                 throw new InvalidDataException("Revision tracking is turned on for document.");
 
             xDoc = wordDoc.MainDocumentPart.GetXDocument();
-            WmlSearchAndReplaceInXDocument(xDoc, search, replace, matchCase, regex, options, evaluator);
+            WmlSearchAndReplaceInXDocument(xDoc, search, replace, matchCase, regex, regexProvided, options, evaluator);
             wordDoc.MainDocumentPart.PutXDocument();
             foreach (var part in wordDoc.MainDocumentPart.HeaderParts)
             {
                 xDoc = part.GetXDocument();
-                WmlSearchAndReplaceInXDocument(xDoc, search, replace, matchCase, regex, options, evaluator);
+                WmlSearchAndReplaceInXDocument(xDoc, search, replace, matchCase, regex, regexProvided, options, evaluator);
                 part.PutXDocument();
             }
             foreach (var part in wordDoc.MainDocumentPart.FooterParts)
             {
                 xDoc = part.GetXDocument();
-                WmlSearchAndReplaceInXDocument(xDoc, search, replace, matchCase, regex, options, evaluator);
+                WmlSearchAndReplaceInXDocument(xDoc, search, replace, matchCase, regex, regexProvided, options, evaluator);
                 part.PutXDocument();
             }
             if (wordDoc.MainDocumentPart.EndnotesPart != null)
             {
                 xDoc = wordDoc.MainDocumentPart.EndnotesPart.GetXDocument();
-                WmlSearchAndReplaceInXDocument(xDoc, search, replace, matchCase, regex, options, evaluator);
+                WmlSearchAndReplaceInXDocument(xDoc, search, replace, matchCase, regex, regexProvided, options, evaluator);
                 wordDoc.MainDocumentPart.EndnotesPart.PutXDocument();
             }
             if (wordDoc.MainDocumentPart.FootnotesPart != null)
             {
                 xDoc = wordDoc.MainDocumentPart.FootnotesPart.GetXDocument();
-                WmlSearchAndReplaceInXDocument(xDoc, search, replace, matchCase, regex, options, evaluator);
+                WmlSearchAndReplaceInXDocument(xDoc, search, replace, matchCase, regex, regexProvided, options, evaluator);
                 wordDoc.MainDocumentPart.FootnotesPart.PutXDocument();
             }
         }

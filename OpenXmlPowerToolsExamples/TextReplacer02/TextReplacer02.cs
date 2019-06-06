@@ -34,6 +34,24 @@ namespace OpenXmlPowerTools
         {
             return null;
         }
+        private static MatchEvaluator GetEvaluator() {
+            return (tokenMatch) => {
+               var token = TokenExcMatch.Match(tokenMatch.Value);
+               if (!token.Success) { return "ERROR: Did not recognize token"; }
+               var nameMatch = TokenNameMatch.Match(token.Value);
+               if (!nameMatch.Success) { return "ERROR: Could not match token name in token: " + token.Value; }
+
+               var formatMatch = FormatMatch.Match(token.Value);
+               var format = formatMatch.Success ? formatMatch.Value : "";
+               return nameMatch.Value;
+            };
+        }
+
+
+        private static readonly Regex TokenIncMatch  = new Regex(@"\[\[(.*?)\]?\]\]"      , RegexOptions.Compiled);
+        private static readonly Regex TokenExcMatch  = new Regex(@"(?<=\[\[)(.*)(?=\]\])" , RegexOptions.Compiled);
+        private static readonly Regex FormatMatch    = new Regex(@"(?<=\{)(.*)(?=\})"     , RegexOptions.Compiled);
+        private static readonly Regex TokenNameMatch = new Regex(@"^(.*?)(?=[\s|\{|\[]|$)", RegexOptions.Compiled);
 
         static void Main(string[] args)
         {
@@ -46,7 +64,7 @@ namespace OpenXmlPowerTools
                 file.CopyTo(Path.Combine(tempDi.FullName, file.Name));
 
             using (WordprocessingDocument doc = WordprocessingDocument.Open(Path.Combine(tempDi.FullName, "Test01.docx"), true))
-                TextReplacer.SearchAndReplace(doc, "t.{1}e", Program.EmptyText);
+                TextReplacer.SearchAndReplace(doc, TokenIncMatch, GetEvaluator());
 
             //try
             //{
